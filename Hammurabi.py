@@ -30,6 +30,12 @@ class Hammurabi:
         self.__totalStarved = 0
         self.__summedPopulation = 0
         self.__initialAcresPerson = round(self.__land / self.__people)
+        #create prompt variables - used by Alexa to keep track of input
+        self.grainFed = -1
+        self.landSold = -1
+        self.landBought = -1
+        self.grainPlanted = -1
+        
         
     """RULES
     - each person needs 20 bushels/year to survive
@@ -46,6 +52,11 @@ class Hammurabi:
     """
     
     def update_turn(self):
+        #reset holder variables
+        self.grainFed = -1
+        self.landSold = -1
+        self.landBought = -1
+        self.grainPlanted = -1
         #by now, these variables have been updated or set for the next turn:
         #__grain, __land, __peopleStarved, __peopleImmigrated
         #check 1 - did you starve too many people?
@@ -101,11 +112,10 @@ class Hammurabi:
         if self.__peopleDiseased > 0:
             statusStr += "Horrors! A plague killed half your people!"
         
-        statusStr += """I beg to report to you.
-        In Year {}, {} people starved, {} came to the city.
-        Population is now {}.
-        The city owns {} acres.
-        You harvested {} bushels per acre
+        statusStr += """In Year {}, {} people starved and {} came to the city.
+        The population is now {}.
+        Your country controls {} acres.
+        Your people harvested {} bushels per acre
         Rats ate {} bushels.
         You have {} bushels in store.
         Land is trading at {} bushels an acre.""".format(
@@ -118,7 +128,15 @@ class Hammurabi:
         
         
         return statusStr
-        
+    
+    def get_current_grain(self):
+        return "You currently have {} bushels of grain.".format(self.__grain)
+    def get_current_land(self):
+        return "You currently have {} acres of land.".format(self.__land)
+    def get_current_people(self):
+        return "Your kingdom currently has {} people.".format(self.__people)
+
+    
     def get_short_status(self):
         return """You have {} bushels of grain, {} acres of land
             , and {} people.""".format(self.__grain, self.__land, self.__people)
@@ -142,7 +160,7 @@ class Hammurabi:
         return 0
     
     def check_for_uprising(self):
-        if self.__population / self.__peopleStarved >= self.__starvePercentUprising:
+        if self.__peopleStarved > 0 and self.__people / self.__peopleStarved >= self.__starvePercentUprising:
             return True
         else:
             return False
@@ -159,6 +177,7 @@ class Hammurabi:
         else:
             self.__land += acres
             self.__grain -= acres * self.__landValue
+            self.landBought = acres
             return "Done"
     
     def prompt_acres_sell(self):
@@ -169,6 +188,7 @@ class Hammurabi:
         else:
             self.__land -= acres
             self.__grain += acres * self.__landValue
+            self.landSold = acres
             return "Done"
     
     def prompt_feed_grain(self):
@@ -190,7 +210,8 @@ class Hammurabi:
             else:
                self.__peopleImmigrated = 0
                self.__peopleStarved = 0
-            return "Done"   
+            self.grainFed = bushels
+            return "Done"
     
     def prompt_plant_grain(self):
         return "How many acres will you plant? You have {} acres.".format(self.__land)
@@ -201,7 +222,9 @@ class Hammurabi:
             return "You don't have that much land."
         elif bushelsNeeded > self.__grain:
             return "You don't have enough grain for that."
-        elif peopleNeeded < self.__people:
+        elif peopleNeeded > self.__people:
             return "You don't have enough people for that."
         else:
             self.__grain -= bushelsNeeded
+            self.grainPlanted = bushelsNeeded
+            return "Done"
